@@ -25,7 +25,21 @@ syntax Expr
   	| Bool
   	| String
   	| Int
-  	| "(" Expr e ")"
+  	| "(" Expr ")"
+  	| "!" Expr
+  	> left ( multiplication: Expr "*" Expr
+  	       | division: Expr "/" Expr)
+  	> left ( addition: Expr "+" Expr
+  	       | subtraction: Expr "-" Expr)
+  	> non-assoc ( greaterThanOrEqual: Expr "\>=" Expr  
+		        | smallerThanOrEqual: Expr "\<=" Expr 
+		        | smallerThan: "\<" Expr 
+		        | greaterThan: "\>" Expr 
+	            )
+	> left ( equals: Expr "==" Expr
+  	       | notEquals: Expr "!=" Expr)
+  	> left AND: Expr "&&" Expr
+  	> left OR: Expr "||" Expr
   	;
   
 syntax Type
@@ -40,6 +54,3 @@ lexical Int
   = "-"?[0-9]+;
 
 lexical Bool = ("True" | "False");
-
-
-
