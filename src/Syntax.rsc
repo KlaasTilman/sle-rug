@@ -12,9 +12,11 @@ start syntax Form
 
 // TODO: question, computed question, block, if-then-else, if-then
 syntax Question
-  = "if" "(" Expr ")" "{" Question "}" 
-  | String Id ":" Type
-  | String Id ":" Type "=" Expr
+  = Str Id ":" Type 
+  | Str Id ":" Type "=" Expr 
+  > "if" "(" Expr ")" "{" 
+  > "else {"
+  | "}"
   ; 
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
@@ -22,8 +24,9 @@ syntax Question
 // and use C/Java style precedence rules (look it up on the internet)
 syntax Expr 
   = Id \ "true" \ "false" // true/false are reserved keywords.
+    | "true"
   	| Bool
-  	| String
+  	| Str
   	| Int
   	| "(" Expr ")"
   	| "!" Expr
@@ -33,8 +36,8 @@ syntax Expr
   	       | subtraction: Expr "-" Expr)
   	> non-assoc ( greaterThanOrEqual: Expr "\>=" Expr  
 		        | smallerThanOrEqual: Expr "\<=" Expr 
-		        | smallerThan: "\<" Expr 
-		        | greaterThan: "\>" Expr 
+		        | smallerThan: Expr "\<" Expr 
+		        | greaterThan: Expr "\>" Expr 
 	            )
 	> left ( equals: Expr "==" Expr
   	       | notEquals: Expr "!=" Expr)
