@@ -14,17 +14,14 @@ start syntax Form
 syntax Question
   = Str Id ":" Type 
   | Str Id ":" Type "=" Expr 
-  > "if" "(" Expr ")" "{" 
-  > "else {"
-  | "}"
-  ; 
+  > "if (" Expr ") {" Question* "}" ("else {" Question* "}")?
+  ;  
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
 // Think about disambiguation using priorities and associativity
 // and use C/Java style precedence rules (look it up on the internet)
 syntax Expr 
   = Id \ "true" \ "false" // true/false are reserved keywords.
-    | "true"
   	| Bool
   	| Str
   	| Int
@@ -56,4 +53,4 @@ lexical Str = "\"" ![\"]*  "\"";
 lexical Int 
   = "-"?[0-9]+;
 
-lexical Bool = ("True" | "False");
+lexical Bool = ("true" | "false");
