@@ -14,7 +14,8 @@ data AForm(loc src = |tmp:///|)
 data AQuestion(loc src = |tmp:///|)
   = question(str stringName, str idName, AType typeName)
   | questionWithExpression(str stringName, str idName, AType typeName, AExpr expression)
-  | ifStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions)
+  | ifStatement(AExpr expression, list[AQuestion] questions)
+  | ifElseStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions2)
   ; 
 
 data AExpr(loc src = |tmp:///|)

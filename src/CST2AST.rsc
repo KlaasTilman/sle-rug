@@ -6,6 +6,8 @@ import AST;
 import ParseTree;
 import String;
 import IO;
+import Boolean;
+
 
 /*
  * Implement a mapping from concrete syntax trees (CSTs) to abstract syntax trees (ASTs)
@@ -25,8 +27,9 @@ AForm cst2ast(f:(Form)`form <Id i> { <Question* qq> }`)
 AQuestion cst2ast(Question q) {
   switch (q) {
   	case (Question)`<Str s> <Id i> : <Type t>`: return question("<s>", "<i>", cst2ast(t));
-  	case (Question)`<Str s> <Id i> : <Type t> = <Expr e>`: return question("<s>", "<i>", cst2ast(t), cst2ast(e));
-  	case (Question)`if ( <Expr e> ) { <Question* qq> } else { <Question* qq2> }`: return question(cst2ast(e), [cst2ast(q) | Question q <- qq], [cst2ast(q) | Question q <- qq2]);
+  	case (Question)`<Str s> <Id i> : <Type t> = <Expr e>`: return questionWithExpression("<s>", "<i>", cst2ast(t), cst2ast(e));
+  	case (Question)`if ( <Expr e> ) { <Question* qq> }`: return ifStatement(cst2ast(e), [cst2ast(q) | Question q <- qq]);
+  	case (Question)`if ( <Expr e> ) { <Question* qq> } else { <Question* pp> }`: return ifElseStatement(cst2ast(e), [cst2ast(q) | Question q <- qq], [cst2ast(p) | Question p <- pp]);
   	default: throw "Unhandled expression: <q>";
   }
 }
@@ -34,23 +37,23 @@ AQuestion cst2ast(Question q) {
 AExpr cst2ast(Expr e) {
   switch (e) {
     case (Expr)`<Id x>`: return ref("<x>", src=x@\loc);
-    case (Expr)`<Bool b>`: return boolExpr(b);
+    case (Expr)`<Bool b>`: return boolExpr(fromString("<b>"));
     case (Expr)`<Str s>`: return strExpr("<s>");
-    case (Expr)`<Int i>`: return intExpr(i);
-    case (Expr)`(<Expr e>)`: return bracketExpr(e);
-    case (Expr)`! <Expr e>`: return notExpr(e);
-    case (Expr)`<Expr e> * <Expr e2>`: return multiplicate(e, e2);
-    case (Expr)`<Expr e> / <Expr e2>`: return divide(e, e2);
-    case (Expr)`<Expr e> + <Expr e2>`: return add(e, e2);
-    case (Expr)`<Expr e> - <Expr e2>`: return subtract(e, e2);
-    case (Expr)`<Expr e> \>= <Expr e2>`: return greaterThanOrEqual(e, e2);
-    case (Expr)`<Expr e> \<= <Expr e2>`: return smallerThanOrEqual(e, e2);
-    case (Expr)`<Expr e> \< <Expr e2>`: return smallerThan(e, e2);
-    case (Expr)`<Expr e> \> <Expr e2>`: return greaterThan(e, e2);
-    case (Expr)`<Expr e> == <Expr e2>`: return equals(e, e2);
-    case (Expr)`<Expr e> != <Expr e2>`: return notEquals(e, e2);
-    case (Expr)`<Expr e> && <Expr e2>`: return AND(e, e2);
-    case (Expr)`<Expr e> || <Expr e2>`: return OR(e, e2);
+    case (Expr)`<Int i>`: return intExpr(toInt("<i>"));
+    case (Expr)`(<Expr e>)`: return bracketExpr(cst2ast(e));
+    case (Expr)`! <Expr e>`: return notExpr(cst2ast(e));
+    case (Expr)`<Expr e> * <Expr e2>`: return multiplicate(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> / <Expr e2>`: return divide(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> + <Expr e2>`: return add(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> - <Expr e2>`: return subtract(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> \>= <Expr e2>`: return greaterThanOrEqual(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> \<= <Expr e2>`: return smallerThanOrEqual(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> \< <Expr e2>`: return smallerThan(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> \> <Expr e2>`: return greaterThan(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> == <Expr e2>`: return equals(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> != <Expr e2>`: return notEquals(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> && <Expr e2>`: return AND(cst2ast(e), cst2ast(e2));
+    case (Expr)`<Expr e> || <Expr e2>`: return OR(cst2ast(e), cst2ast(e2));
     // etc.
     
     default: throw "Unhandled expression: <e>";
