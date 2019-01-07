@@ -1,7 +1,9 @@
 module Resolve
 
 import AST;
-
+import IO;
+import Syntax;
+import String;
 /*
  * Name resolution for QL
  */ 
@@ -19,9 +21,27 @@ alias UseDef = rel[loc use, loc def];
 UseDef resolve(AForm f) = uses(f) o defs(f);
 
 Use uses(AForm f) {
-  return {}; 
+	Use use = {};
+	for (/AExpr e := f) {
+		switch (e) {
+			case ref(str name): use+= {<e.src, e.name>};
+			default: ;
+		}
+	}
+	
+  	return use; 
 }
 
+
+
 Def defs(AForm f) {
-  return {}; 
+	Def def = {};
+	for (/AQuestion q:=f) {
+		switch (q) {
+			case question(str stringName, str idName, AType typeName): def += { <q.idName, q.src>};
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): def += { <q.idName, q.src>};
+			default: ;
+		} 
+	}
+  	return def; 
 }
