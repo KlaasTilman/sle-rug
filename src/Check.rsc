@@ -3,6 +3,8 @@ module Check
 import AST;
 import Resolve;
 import Message; // see standard library
+import Set;
+
 
 data Type
   = tint()
@@ -15,20 +17,51 @@ data Type
 alias TEnv = rel[loc def, str name, str label, Type \type];
 
 // To avoid recursively traversing the form, use the `visit` construct
-// or deep match (e.g., `for (/question(...) := f) {...}` ) 
+// or deep match (e.g., `for (/question(...) := f) {.-..}` ) 
 TEnv collect(AForm f) {
-  return {}; 
+	TEnv tenv = {};
+	for (/AQuestion q:=f) {
+		switch (q) {
+			case question(str stringName, str idName, AType typeName): tenv+={<q.src, stringName, idName, typeOfAType(typeName)>};
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): tenv += {<q.src, stringName, idName, typeOfAType(typeName)>};
+			default: ;
+		} 
+	}
+  	return tenv; 
+}
+
+Type typeOfAType(AType t) {
+	switch (t) {
+		case integer(): return tint();
+		case string(): return tstr();
+		case boolean(): return tbool();
+		default: return tunknown();
+	}
 }
 
 set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
-  return {}; 
+	messages={};
+	for (/AQuestion q:=f) {
+		switch (q) {
+			case question(str stringName, str idName, AType typeName): messages+=check(q, tenv, useDef);
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): messages+=check(q, tenv, useDef);
+			default: ;
+		} 
+	}
+	return messages;
 }
+	
 
 // - produce an error if there are declared questions with the same name but different types.
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
-  return {}; 
+	messages={};
+	for (/q.stringName := tenv) {
+		messages += error("Declared question has the same name but different type", q.src);
+	}
+	
+  	return messages; 
 }
 
 // Check operand compatibility with operators.
@@ -49,6 +82,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
+   	// Maybe useful for better deep matching !!!!!!!!!!!!!!!!!
     case ref(str x, src = loc u):  
       if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
         return t;
