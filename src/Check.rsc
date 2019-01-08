@@ -4,6 +4,8 @@ import AST;
 import Resolve;
 import Message; // see standard library
 import Set;
+import IO;
+import Relation;
 
 
 data Type
@@ -22,8 +24,8 @@ TEnv collect(AForm f) {
 	TEnv tenv = {};
 	for (/AQuestion q:=f) {
 		switch (q) {
-			case question(str stringName, str idName, AType typeName): tenv+={<q.src, stringName, idName, typeOfAType(typeName)>};
-			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): tenv += {<q.src, stringName, idName, typeOfAType(typeName)>};
+			case question(str stringName, str idName, AType typeName): tenv+={<q.src, idName, stringName, typeOfAType(typeName)>};
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): tenv += {<q.src, idName, stringName, typeOfAType(typeName)>};
 			default: ;
 		} 
 	}
@@ -56,11 +58,10 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 // - duplicate labels should trigger a warning 
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
+	//println(tenv<1>);
+	println(tenv[_,q.idName,_]);
 	messages={};
-	for (/q.stringName := tenv) {
-		messages += error("Declared question has the same name but different type", q.src);
-	}
-	
+	messages += {error("Declared question has the same name but different type", q.src) | size(tenv[_,q.idName,_]) > 1};
   	return messages; 
 }
 
