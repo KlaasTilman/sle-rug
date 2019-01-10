@@ -59,9 +59,10 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
 	//println(tenv<1>);
-	println(tenv[_,q.idName,_]);
+	println(size(tenv[_,q.idName, _]));
 	messages={};
-	messages += {error("Declared question has the same name but different type", q.src) | size(tenv[_,q.idName,_]) > 1};
+	messages += {error("Declared question has the same name but different type", q.src) | size(tenv[_,q.idName, _]) > 1};
+  	messages += {warning("Duplicate label", q.src) | size((tenv<2,0>)[q.stringName]) > 1};
   	return messages; 
 }
 
