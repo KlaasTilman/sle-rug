@@ -18,6 +18,6 @@ form taxOfficeExample {
       privateDebt: integer
     "Value residue:"
       valueResidue: integer = 
-        ((sellingPrice - privateDebt) * true)
+        ((sellingPrice - pizza) * 1)
   }
 }

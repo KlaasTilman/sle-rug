@@ -46,7 +46,10 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 	for (/AQuestion q:=f) {
 		switch (q) {
 			case question(str stringName, str idName, AType typeName): messages+=check(q, tenv, useDef);
-			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): messages+=check(q, tenv, useDef);
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): {
+																				messages+=check(q, tenv, useDef); 
+																				messages+=check(expression, tenv, useDef);
+																				}
 			default: ;
 		} 
 	}
@@ -59,10 +62,14 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 // - the declared type computed questions should match the type of the expression.
 set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
 	//println(tenv<1>);
-	println(size(tenv[_,q.idName, _]));
 	messages={};
 	messages += {error("Declared question has the same name but different type", q.src) | size(tenv[_,q.idName, _]) > 1};
   	messages += {warning("Duplicate label", q.src) | size((tenv<2,0>)[q.stringName]) > 1};
+  	
+  	if(q has expression) {
+  		messages += {error("The declared type does not match the type of the expression", q.src) | typeOf(q.expression, tenv, useDef) notin tenv[q.src]<2>};
+  	}
+  	
   	return messages; 
 }
 
@@ -72,14 +79,18 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
 set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
   
+  println(e);
+  
   switch (e) {
     case ref(str x, src = loc u):
       msgs += { error("Undeclared question", u) | useDef[u] == {} };
-
+     default: println("DEFAULT");
+    
     // etc.
   }
+  println(msgs);
   
-  return msg; 
+  return msgs; 
 }
 
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
