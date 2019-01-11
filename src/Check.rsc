@@ -46,12 +46,13 @@ set[Message] check(AForm f, TEnv tenv, UseDef useDef) {
 	for (/AQuestion q:=f) {
 		switch (q) {
 			case question(str stringName, str idName, AType typeName): messages+=check(q, tenv, useDef);
-			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): {
-																				messages+=check(q, tenv, useDef); 
-																				messages+=check(expression, tenv, useDef);
-																				}
+			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): messages+=check(q, tenv, useDef); 
 			default: ;
 		} 
+	}
+	
+	for (/AExpr e:=f) {
+		messages+=check(e, tenv, useDef);
 	}
 	return messages;
 }
@@ -79,16 +80,37 @@ set[Message] check(AQuestion q, TEnv tenv, UseDef useDef) {
 set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
   set[Message] msgs = {};
   
-  println(e);
-  
   switch (e) {
     case ref(str x, src = loc u):
-      msgs += { error("Undeclared question", u) | useDef[u] == {} };
-     default: println("DEFAULT");
-    
+      msgs += { error("Undeclared variable", u) | useDef[u] == {} };
+  	case notExpr(AExpr expression, src = loc u):
+		msgs += { error("Operator `!` expects boolean type", u) | typeOf(expression, tenv, useDef)==tbool() };
+	case multiplicate(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `*` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case divide(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `/` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case add(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `+` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case subtract(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `-` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case greaterThanOrEqual(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `\>=` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case smallerThanOrEqual(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `\<=` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case smallerThan(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `\<` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case greaterThan(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `\>` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
+	case equals(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `=` expects equal types", u) | !(typeOf(expression1, tenv, useDef)==typeOf(expression2, tenv, useDef))};
+	case notEquals(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `!=` expects equal types", u) | !(typeOf(expression1, tenv, useDef)==typeOf(expression2, tenv, useDef))};
+	case AND(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `AND` expects two boolean types", u) | !(typeOf(expression1, tenv, useDef)==tbool() && typeOf(expression2, tenv, useDef)==tbool())};
+	case OR(AExpr expression1, AExpr expression2, src = loc u):
+		msgs += { error("Operator `OR` expects two boolean types", u) | !(typeOf(expression1, tenv, useDef)==tbool() && typeOf(expression2, tenv, useDef)==tbool())};
     // etc.
   }
-  println(msgs);
   
   return msgs; 
 }
@@ -96,13 +118,31 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 Type typeOf(AExpr e, TEnv tenv, UseDef useDef) {
   switch (e) {
    	// Maybe useful for better deep matching !!!!!!!!!!!!!!!!!
-    case ref(str x, src = loc u):  
-      if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
+  	 case ref(str x, src = loc u):  
+    	if (<u, loc d> <- useDef, <d, x, _, Type t> <- tenv) {
         return t;
       }
+	 case boolExpr(bool boolValue): return tbool();
+	 case strExpr(str stringValue): return tstr();
+	 case intExpr(int intValue): return tint();
+     case bracketExpr(AExpr expression): return typeOf(expression, tenv, useDef);
+	 case notExpr(AExpr expression): return tbool();
+	 case multiplicate(AExpr expression1, AExpr expression2): return tint();
+	 case divide(AExpr expression1, AExpr expression2): return tint();
+	 case add(AExpr expression1, AExpr expression2): return tint();
+	 case subtract(AExpr expression1, AExpr expression2): return tint();
+	 case greaterThanOrEqual(AExpr expression1, AExpr expression2): return tbool();
+	 case smallerThanOrEqual(AExpr expression1, AExpr expression2): return tbool();
+	 case smallerThan(AExpr expression1, AExpr expression2): return tbool();
+	 case greaterThan(AExpr expression1, AExpr expression2): return tbool();
+	 case equals(AExpr expression1, AExpr expression2): return tbool();
+	 case notEquals(AExpr expression1, AExpr expression2): return tbool();
+	 case AND(AExpr expression1, AExpr expression2): return tbool();
+	 case OR(AExpr expression1, AExpr expression2): return tbool();
+	 default: return tunknown();
     // etc.
   }
-  return tunknown(); 
+  return tunknown();
 }
 
 /* 

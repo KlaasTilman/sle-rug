@@ -10,6 +10,15 @@ form taxOfficeExample {
   
   "Did you sell a house in 2010?"
   	hasSoldHouse: integer
+  	
+  "Were you born in 1998?"
+  	bornIn: boolean
+  
+  "Were you born in 1998?"
+  	bornInDuplicate: boolean
+  
+  "Were you born in 1993?"
+  	bornIn2: boolean
     
   if (hasSodHouse) {
     "What was the selling price?"
@@ -20,4 +29,12 @@ form taxOfficeExample {
       valueResidue: integer = 
         ((sellingPrice - pizza) * 1)
   }
+  
+  "Addition of birthdates:"
+  	addBirthdates: boolean = 
+  		(bornIn + bornIn2)
+  
+  "And of birthdates:"
+  	andBirthdates: boolean = 
+  		(bornIn && hasSoldHouse)
 }
