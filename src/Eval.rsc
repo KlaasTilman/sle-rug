@@ -51,22 +51,16 @@ VEnv eval(AForm f, Input inp, VEnv venv) {
 }
 
 VEnv evalOnce(AForm f, Input inp, VEnv venv) {
-	VEnv venvOnce=();
 	for (/AQuestion q:=f) {
-		venvOnce+=eval(q, inp, venv);
+		venv+=eval(q, inp, venv);
 	}
-	return venvOnce;
+	return venv;
 }
 
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
   // evaluate conditions for branching,
   // evaluate inp and computed questions to return updated VEnv
   VEnv venvQuestion=();
-  if (q has stringName) {
-  	println(q.stringName);
-  	println(inp.question);
-  	println(q.stringName==inp.question);
-  }
   switch (q) {
   	case question(str stringName, str idName, AType typeName):
   		if (stringName == inp.question) {
