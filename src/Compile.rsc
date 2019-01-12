@@ -19,14 +19,30 @@ import lang::html5::DOM; // see standard library
  */
 
 void compile(AForm f) {
-  writeFile(f.src[extension="js"].top, form2js(f));
-  writeFile(f.src[extension="html"].top, toString(form2html(f)));
+	//writeFile(f.src[extension="js"].top, form2js(f));
+	writeFile(f.src[extension="html"].top, toString(form2html(f)));
 }
 
 HTML5Node form2html(AForm f) {
-  return html();
+	HTML5Node htmlForm=form();
+	for (AQuestion q <- f.questions) {
+		if (q has stringName) {
+			htmlForm=formQuestion2html(q, htmlForm);
+		}
+	}
+	return htmlForm;
+}
+
+HTML5Node formQuestion2html(AQuestion q, HTML5Node htmlForm) {
+	switch (q.typeName) {
+		case integer(): htmlForm.kids+=[q.stringName,input(\type("password"), name("fname"))];
+		case string(): htmlForm.kids+=[q.stringName, input("type=\"text\" name=\"fname\"")];
+		case boolean(): htmlForm.kids+=[q.stringName, input("type=\"text\" name=\"fname\"")];
+		default:;
+	}
+	return htmlForm;
 }
 
 str form2js(AForm f) {
-  return "";
+	return "";
 }
