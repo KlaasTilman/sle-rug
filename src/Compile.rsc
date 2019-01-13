@@ -5,6 +5,8 @@ import Resolve;
 import IO;
 import lang::html5::DOM; // see standard library
 
+int counter = 0;
+
 /*
  * Implement a compiler for QL to HTML and Javascript
  *
@@ -26,23 +28,72 @@ void compile(AForm f) {
 HTML5Node form2html(AForm f) {
 	HTML5Node htmlForm=form();
 	for (AQuestion q <- f.questions) {
-		if (q has stringName) {
-			htmlForm=formQuestion2html(q, htmlForm);
-		}
+		htmlForm.kids+=[formMainQuestion2html(q)];
 	}
-	return htmlForm;
+	return htmlForm.kids+=[button("Submit", id("submitButton"))];
 }
 
-HTML5Node formQuestion2html(AQuestion q, HTML5Node htmlForm) {
+HTML5Node formQuestion2html(AQuestion q) {
+	HTML5Node htmlForm=form();
 	switch (q.typeName) {
-		case integer(): htmlForm.kids+=[q.stringName,input(\type("password"), name("fname"))];
-		case string(): htmlForm.kids+=[q.stringName, input("type=\"text\" name=\"fname\"")];
-		case boolean(): htmlForm.kids+=[q.stringName, input("type=\"text\" name=\"fname\"")];
+		case string(): htmlForm=div(q.stringName,input(\type("text"), name(q.idName)));
+		case integer(): htmlForm=div(q.stringName,input(\type("numeric"), name(q.idName)));
+		case boolean(): htmlForm=div(q.stringName,input(\type("checkbox"), name(q.idName)));
 		default:;
 	}
 	return htmlForm;
 }
 
+HTML5Node formComputedQuestion2html(AQuestion q) {
+	HTML5Node htmlForm=form();
+	switch (q.typeName) {
+		case string(): htmlForm=div(q.stringName,input(\type("text"), name(q.idName), readonly("")));
+		case integer(): htmlForm=div(q.stringName,input(\type("numeric"), name(q.idName), readonly("")));
+		case boolean(): htmlForm=div(q.stringName,input(\type("checkbox"), name(q.idName), readonly("")));
+		default:;
+	}
+	return htmlForm;
+}
+
+HTML5Node formMainQuestion2html(AQuestion q) {
+	switch (q) {
+		case question(str stringName, str idName, AType typeName): 
+			return formQuestion2html(q);
+  		case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): 
+			return formComputedQuestion2html(q);
+  		case ifStatement(AExpr expression, list[AQuestion] questions):
+  		{ 
+  			counter=counter+1;
+  			HTML5Node ifHtml=div(id(counter));
+  			for (AQuestion q <- questions) {
+  				ifHtml.kids+= [formMainQuestion2html(q)];
+  			}
+  			return ifHtml;
+  		}
+  		case ifElseStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions2): 
+  		{
+  			HTML5Node ifElseHtml=div();
+  			counter=counter+1;
+ 
+  			HTML5Node ifHtml=div(id(counter));
+  			counter=counter+1;
+  			HTML5Node elseHtml=div(id(counter));
+  			for (AQuestion q <- questions) {
+  				ifHtml.kids+= [formMainQuestion2html(q)];
+  			}
+  			for (AQuestion q <- questions2) {
+  				elseHtml.kids+= [formMainQuestion2html(q)];
+  			}
+  			ifElseHtml.kids+=[ifHtml];
+  			ifElseHtml.kids+=[elseHtml];
+  			return ifElseHtml;
+  		}
+	}
+}
+
+
+
 str form2js(AForm f) {
+	
 	return "";
 }
