@@ -3,6 +3,9 @@ module Transform
 import Resolve;
 import AST;
 import IO;
+import ParseTree;
+import Syntax;
+import Set;
 
 /* 
  * Transforming QL forms
@@ -34,33 +37,52 @@ AForm flatten(AForm f) {
  * Bonus: do it on concrete syntax trees.
  */
  
+ set[loc] getAllOccurences(loc useOrDef, UseDef useDef) {
+ 	set[loc] occurences = {};
+ 	// If it is empty, it is a definition
+ 	if (isEmpty(useDef[useOrDef])) {
+ 		occurences += { use | <loc use, useOrDef> <- useDef};
+ 		loc firstUse = toList(occurences)[0];
+ 		occurences += { def | <firstUse, loc def> <- useDef};
+ 	} else {
+ 	// The set is not empty so it is a use
+ 		occurences += { def | <useOrDef, loc def> <- useDef};
+ 		occurences += useOrDef;
+ 	}
+ 	return occurences;
+ } 
+ 
  AForm rename(AForm f, loc useOrDef, str newName, UseDef useDef) {
-   //println(useDef);
-   println(useDef[useOrDef]);
-   str oldName;
-	for (/AQuestion q:=f) {
-		// Set only contains all definitions
-		if (q.src in useDef[useOrDef]) {
-		
-			q = question(q.stringName, newName, q.typeName);
-			println(q.idName);
-			oldName = q.idName;
-			//q.idName = newName;
-			println(q.idName);
-		}
-	}
-	
+   
+   // Try to parse the new name to see if it is valid
+   try {
+   	parse(#Id, newName);
+   	} catch :
+   	return f;
+   	
+   // Check if the name already exists
+   for (/AQuestion q <- f) {
+   		switch (q) {
+   			case question(str stringName, newName, AType typeName): {
+   				println("NAME ALREADY EXISTS");
+   				return f;
+   			}
+   			case questionWithExpression(str stringName, newName, AType typeName, AExpr expression): {
+				println("NAME ALREADY EXISTS2");
+				return f;
+			}
+   		}
+   }
+   
+   	set[loc] occurences = getAllOccurences(useOrDef, useDef);	
 	return visit(f) {
-		case question(str stringName, str idName, AType typeName, src=loc u) => question(stringName, newName, typeName)
-			when u in useDef[useOrDef]
+		case question(str stringName, str idName, AType typeName, src=loc u) => question(stringName, newName, typeName, src=u)
+			when u in occurences
+		case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression, src=loc v) => questionWithExpression(stringName, newName, typeName, expression, src=v)
+			when v in occurences
+		case ref(str name, src=loc w) => ref(newName, src=w)
+			when w in occurences
 	};
-	
-
-	
-	for (/ref(oldName, src = loc u) := f) {
-		println(u);
-	}  
-	println(f);
    return f; 
  } 
  
