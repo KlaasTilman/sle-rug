@@ -2,6 +2,7 @@ module Transform
 
 import Resolve;
 import AST;
+import IO;
 
 /* 
  * Transforming QL forms
@@ -34,6 +35,32 @@ AForm flatten(AForm f) {
  */
  
  AForm rename(AForm f, loc useOrDef, str newName, UseDef useDef) {
+   //println(useDef);
+   println(useDef[useOrDef]);
+   str oldName;
+	for (/AQuestion q:=f) {
+		// Set only contains all definitions
+		if (q.src in useDef[useOrDef]) {
+		
+			q = question(q.stringName, newName, q.typeName);
+			println(q.idName);
+			oldName = q.idName;
+			//q.idName = newName;
+			println(q.idName);
+		}
+	}
+	
+	return visit(f) {
+		case question(str stringName, str idName, AType typeName, src=loc u) => question(stringName, newName, typeName)
+			when u in useDef[useOrDef]
+	};
+	
+
+	
+	for (/ref(oldName, src = loc u) := f) {
+		println(u);
+	}  
+	println(f);
    return f; 
  } 
  
