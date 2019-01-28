@@ -141,7 +141,7 @@ str exprToJS(AExpr e) {
 	case strExpr(str stringValue): return "<stringValue>";
 	case intExpr(int intValue): return "<intValue>";
     case bracketExpr(AExpr expression): return "("+exprToJS(expression)+")";
-	case notExpr(AExpr expression): return "!"+exprToJS;
+	case notExpr(AExpr expression): return "!"+exprToJS(expression);
 	case multiplicate(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "*" + exprToJS(expression2);
 	case divide(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "/" + exprToJS(expression2);
 	case add(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "+" + exprToJS(expression2);
