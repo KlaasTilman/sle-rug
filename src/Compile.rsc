@@ -26,6 +26,7 @@ void compile(AForm f) {
 	writeFile(f.src[extension="html"].top, toString(form2html(f)));
 }
 
+/* Convert a form to html by looping over all the questions */
 HTML5Node form2html(AForm f) {
 	HTML5Node htmlForm=form();
 	htmlForm.kids+=[script(src("https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"))];
@@ -36,6 +37,7 @@ HTML5Node form2html(AForm f) {
 	return htmlForm.kids+=[button("Submit", id("submitButton"))];
 }
 
+/* Convert a not yet computed question to html (so should be editable) */
 HTML5Node formQuestion2html(AQuestion q) {
 	HTML5Node htmlForm=form();
 	switch (q.typeName) {
@@ -47,6 +49,7 @@ HTML5Node formQuestion2html(AQuestion q) {
 	return htmlForm;
 }
 
+/* Convert a question which is already computed to html (so should not be editable) */
 HTML5Node formComputedQuestion2html(AQuestion q) {
 	HTML5Node htmlForm=form();
 	switch (q.typeName) {
@@ -58,6 +61,7 @@ HTML5Node formComputedQuestion2html(AQuestion q) {
 	return htmlForm;
 }
 
+/* Recursively convert all question to html by calling the corresponding functions */
 HTML5Node formMainQuestion2html(AQuestion q) {
 	switch (q) {
 		case question(str stringName, str idName, AType typeName): 
@@ -66,8 +70,10 @@ HTML5Node formMainQuestion2html(AQuestion q) {
 			return formComputedQuestion2html(q);
   		case ifStatement(AExpr expression, list[AQuestion] questions):
   		{ 
+  			// We increase the counter to be able hide and show questions
   			counter=counter+1;
   			HTML5Node ifHtml=div(id(counter));
+  			// We loop over all the if-questions and convert them to html
   			for (AQuestion q <- questions) {
   				ifHtml.kids+= [formMainQuestion2html(q)];
   			}
@@ -76,17 +82,22 @@ HTML5Node formMainQuestion2html(AQuestion q) {
   		case ifElseStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions2): 
   		{
   			HTML5Node ifElseHtml=div();
+			// We increase the counter to be able hide and show questions
   			counter=counter+1;
  
   			HTML5Node ifHtml=div(id(counter));
+  			// We increase the counter to be able hide and show questions
   			counter=counter+1;
   			HTML5Node elseHtml=div(id(counter));
+  			// We loop over all the if-questions and convert them to html
   			for (AQuestion q <- questions) {
   				ifHtml.kids+= [formMainQuestion2html(q)];
   			}
+			// We loop over all the if-questions and convert them to html
   			for (AQuestion q <- questions2) {
   				elseHtml.kids+= [formMainQuestion2html(q)];
   			}
+  			// We add both the if and else html and return everything
   			ifElseHtml.kids+=[ifHtml];
   			ifElseHtml.kids+=[elseHtml];
   			return ifElseHtml;
@@ -94,8 +105,69 @@ HTML5Node formMainQuestion2html(AQuestion q) {
 	}
 }
 
+/* Convert a form to javascript */
+str form2js(AForm f) {
+	str javascriptForm="";
+	javascriptForm += "$(document).ready(function(){\n";
+	// Initialise all variables
+	for (/AQuestion q:=f) {
+		if (q has typeName && !(q has expression)) {
+			switch (q.typeName) {
+				case integer(): javascriptForm += "var "+q.idName+" = 0;\n";
+				case boolean(): javascriptForm += "var "+q.idName+" = false;\n";
+				case string(): javascriptForm += "var "+q.idName+" = \"\";\n";
+			}
+		}
+	}
+	// Compute all questions with an expression
+	for (/AQuestion q:=f) {
+		if (q has typeName && q has expression) {
+			javascriptForm += "var "+q.idName+" = "+exprToJS(q.expression)+";\n";
+			javascriptForm += "$(\"input[name=\'"+q.idName+"\']\").val("+q.idName+");\n";
+		}
+	}
+	
+	str showHide="";
+	for (AQuestion q <- f.questions) {
+		showHide += formMainJavascript(q);
+	}
+	
+	javascriptForm += showHide;
+	
+	javascriptForm +="$(\'input\').change(function(){\n";
+	
+	// Make sure values change when input is changed
+	for (/AQuestion q:=f) {
+		if (q has typeName && !(q has expression)) {
+			javascriptForm += q.idName + " = $(\"input[name=\'"+q.idName+"\']\").";
+			switch (q.typeName) {
+				case integer(): javascriptForm +="val();\n";
+				case boolean(): javascriptForm += "prop(\'checked\');\n";
+				case string(): javascriptForm += "val();\n";
+			}
+		}
+	}
+	
+	// Make sure values are re-computed when input is changed
+	for (/AQuestion q:=f) {
+		if (q has typeName && q has expression) {
+			javascriptForm += q.idName + " = " + exprToJS(q.expression) + ";\n";
+			javascriptForm += "$(\"input[name=\'"+q.idName+"\']\").val("+q.idName+");\n";
+		}
+	}
+	
+	javascriptForm += showHide;
+	
+	javascriptForm += "});\n";
+
+	javascriptForm += "});\n";
+	return javascriptForm;
+}
+
+/* Convert a question to javascript */
 str formMainJavascript(AQuestion q) {
 	switch (q) {
+		// Make sure certain questions are hidden/shown when the guard is true for the if-statement
   		case ifStatement(AExpr expression, list[AQuestion] questions):
   		{ 
   			javascriptCounter=javascriptCounter+1;
@@ -110,6 +182,7 @@ str formMainJavascript(AQuestion q) {
   			}
   			return ifJavascript;
   		}
+  		// Make sure certain questions are hidden/shown when guard is true for the if or else statement
   		case ifElseStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions2): 
   		{
   			javascriptCounter=javascriptCounter+1;
@@ -134,84 +207,27 @@ str formMainJavascript(AQuestion q) {
 	return "" ;
 }
 
+/* Convert an expression to javascript */
 str exprToJS(AExpr e) {
-  switch (e) {
-    case ref(str x): return x;
-    case boolExpr(bool boolValue): return "<boolValue>";
-	case strExpr(str stringValue): return "<stringValue>";
-	case intExpr(int intValue): return "<intValue>";
-    case bracketExpr(AExpr expression): return "("+exprToJS(expression)+")";
-	case notExpr(AExpr expression): return "!"+exprToJS(expression);
-	case multiplicate(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "*" + exprToJS(expression2);
-	case divide(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "/" + exprToJS(expression2);
-	case add(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "+" + exprToJS(expression2);
-	case subtract(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "-" + exprToJS(expression2);
-	case greaterThanOrEqual(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\>=" + exprToJS(expression2);
-	case smallerThanOrEqual(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\<=" + exprToJS(expression2);
-	case smallerThan(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\<" + exprToJS(expression2);
-	case greaterThan(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\>" + exprToJS(expression2);
-	case equals(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "==" + exprToJS(expression2);
-	case notEquals(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "!=" + exprToJS(expression2);
-	case AND(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "&&" + exprToJS(expression2);
-	case OR(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "||" + exprToJS(expression2);
-    // etc.
-    
-    default: throw "Unsupported expression <e>";
-  }
-}
-
-
-
-str form2js(AForm f) {
-	str javascriptForm="";
-	javascriptForm += "$(document).ready(function(){\n";
-	for (/AQuestion q:=f) {
-		if (q has typeName && !(q has expression)) {
-			switch (q.typeName) {
-				case integer(): javascriptForm += "var "+q.idName+" = 0;\n";
-				case boolean(): javascriptForm += "var "+q.idName+" = false;\n";
-				case string(): javascriptForm += "var "+q.idName+" = \"\";\n";
-			}
-		}
+	switch (e) {
+		case ref(str x): return x;
+		case boolExpr(bool boolValue): return "<boolValue>";
+		case strExpr(str stringValue): return "<stringValue>";
+		case intExpr(int intValue): return "<intValue>";
+		case bracketExpr(AExpr expression): return "("+exprToJS(expression)+")";
+		case notExpr(AExpr expression): return "!"+exprToJS(expression);
+		case multiplicate(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "*" + exprToJS(expression2);
+		case divide(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "/" + exprToJS(expression2);
+		case add(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "+" + exprToJS(expression2);
+		case subtract(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "-" + exprToJS(expression2);
+		case greaterThanOrEqual(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\>=" + exprToJS(expression2);
+		case smallerThanOrEqual(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\<=" + exprToJS(expression2);
+		case smallerThan(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\<" + exprToJS(expression2);
+		case greaterThan(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "\>" + exprToJS(expression2);
+		case equals(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "==" + exprToJS(expression2);
+		case notEquals(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "!=" + exprToJS(expression2);
+		case AND(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "&&" + exprToJS(expression2);
+		case OR(AExpr expression1, AExpr expression2): return exprToJS(expression1) + "||" + exprToJS(expression2);
+		default: throw "Unsupported expression <e>";
 	}
-	for (/AQuestion q:=f) {
-		if (q has typeName && q has expression) {
-			javascriptForm += "var "+q.idName+" = "+exprToJS(q.expression)+";\n";
-			javascriptForm += "$(\"input[name=\'"+q.idName+"\']\").val("+q.idName+");\n";
-		}
-	}
-	
-	str showHide="";
-	for (AQuestion q <- f.questions) {
-		showHide += formMainJavascript(q);
-	}
-	
-	javascriptForm += showHide;
-	
-	javascriptForm +="$(\'input\').change(function(){\n";
-	
-	
-	for (/AQuestion q:=f) {
-		if (q has typeName && !(q has expression)) {
-			javascriptForm += q.idName + " = $(\"input[name=\'"+q.idName+"\']\").";
-			switch (q.typeName) {
-				case integer(): javascriptForm +="val();\n";
-				case boolean(): javascriptForm += "prop(\'checked\');\n";
-				case string(): javascriptForm += "val();\n";
-			}
-		}
-	}
-	for (/AQuestion q:=f) {
-		if (q has typeName && q has expression) {
-			javascriptForm += q.idName + " = " + exprToJS(q.expression) + ";\n";
-			javascriptForm += "$(\"input[name=\'"+q.idName+"\']\").val("+q.idName+");\n";
-		}
-	}
-	
-	javascriptForm += showHide;
-	
-	javascriptForm += "});\n";
-
-	javascriptForm += "});\n";
-	return javascriptForm;
 }
