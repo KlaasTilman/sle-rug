@@ -29,7 +29,7 @@ Use uses(AForm f) {
 		}
 	}
 	
-  	return use; 
+	return use; 
 }
 
 
@@ -37,12 +37,12 @@ Use uses(AForm f) {
 Def defs(AForm f) {
 	Def def = {};
 	for (/AQuestion q:=f) {
-		// Possible with deep match
+	// Possible with deep match
 		switch (q) {
 			case question(str stringName, str idName, AType typeName): def += { <q.idName, q.src>};
 			case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): def += { <q.idName, q.src>};
 			default: ;
 		} 
 	}
-  	return def; 
+	return def; 
 }
