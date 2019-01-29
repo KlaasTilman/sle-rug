@@ -8,31 +8,31 @@ extend lang::std::Id;
  */
 
 start syntax Form 
-  = "form" Id "{" Question* "}"; 
+	= "form" Id "{" Question* "}"; 
 
 // TODO: question, computed question, block, if-then-else, if-then
 syntax Question
-  = Str Id ":" Type 
-  | Str Id ":" Type "=" Expr 
-  > "if (" Expr ") {" Question* "}" !>> "else"
-  | "if (" Expr ") {" Question* "}" "else {" Question* "}"
-  ;  
+	= Str Id ":" Type 
+	| Str Id ":" Type "=" Expr 
+	> "if (" Expr ") {" Question* "}" !>> "else"
+	| "if (" Expr ") {" Question* "}" "else {" Question* "}"
+	;  
 
 // TODO: +, -, *, /, &&, ||, !, >, <, <=, >=, ==, !=, literals (bool, int, str)
 // Think about disambiguation using priorities and associativity
 // and use C/Java style precedence rules (look it up on the internet)
 syntax Expr 
-  = Id \ "true" \ "false" // true/false are reserved keywords.
-  	| Bool
-  	| Str
-  	| Int
-  	| "(" Expr ")"
-  	| "!" Expr
-  	> left ( multiplication: Expr "*" Expr
-  	       | division: Expr "/" Expr)
-  	> left ( addition: Expr "+" Expr
-  	       | subtraction: Expr "-" Expr)
-  	> non-assoc ( greaterThanOrEqual: Expr "\>=" Expr  
+	= Id \ "true" \ "false" // true/false are reserved keywords.
+	| Bool
+	| Str
+	| Int
+	| "(" Expr ")"
+	| "!" Expr
+	> left ( multiplication: Expr "*" Expr
+			| division: Expr "/" Expr)
+	> left ( addition: Expr "+" Expr
+			| subtraction: Expr "-" Expr)
+	> non-assoc ( greaterThanOrEqual: Expr "\>=" Expr  
 		        | smallerThanOrEqual: Expr "\<=" Expr 
 		        | smallerThan: Expr "\<" Expr 
 		        | greaterThan: Expr "\>" Expr 
@@ -44,10 +44,10 @@ syntax Expr
   	;
   
 syntax Type
-   = "integer" 
-   | "string" 
-   | "boolean"
-   ;  
+	= "integer" 
+	| "string" 
+	| "boolean"
+	;  
   
 lexical Str = "\"" ![\"]*  "\"";
 
