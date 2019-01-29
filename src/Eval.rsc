@@ -59,8 +59,8 @@ VEnv evalOnce(AForm f, Input inp, VEnv venv) {
 }
 
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
-	// evaluate conditions for branching,
-	// evaluate inp and computed questions to return updated VEnv
+	// Evaluate conditions for branching,
+	// Evaluate inp and computed questions to return updated VEnv
 	VEnv venvQuestion=();
 	switch (q) {
 		case question(str stringName, str idName, AType typeName):
