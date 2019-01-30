@@ -52,7 +52,7 @@ VEnv eval(AForm f, Input inp, VEnv venv) {
 }
 
 VEnv evalOnce(AForm f, Input inp, VEnv venv) {
-	for (/AQuestion q:=f) {
+	for (AQuestion q <- f.questions) {
 		venv+=eval(q, inp, venv);
 	}
 	return venv;
@@ -61,7 +61,7 @@ VEnv evalOnce(AForm f, Input inp, VEnv venv) {
 VEnv eval(AQuestion q, Input inp, VEnv venv) {
 	// Evaluate conditions for branching,
 	// Evaluate inp and computed questions to return updated VEnv
-	VEnv venvQuestion=();
+	//VEnv venvQuestion=();
 	switch (q) {
 		case question(str stringName, str idName, AType typeName):
 			if (stringName == inp.question) {
@@ -70,24 +70,27 @@ VEnv eval(AQuestion q, Input inp, VEnv venv) {
 		case questionWithExpression(str stringName, str idName, AType typeName, AExpr expression): 
 			return venv[idName]= eval(expression, venv);
 		case ifStatement(AExpr expression, list[AQuestion] questions): 
-			if (eval(expression, venv).b) {
+			if (eval(expression, venv) == vbool(true)) {
 				for (AQuestion q0 <- questions) {
-					venvQuestion+=eval(q0, inp, venv);
+					venv+=eval(q0, inp, venv);
 				}
-			return venvQuestion;
+				return venv;
 			}
 		case ifElseStatement(AExpr expression, list[AQuestion] questions, list[AQuestion] questions2):
-			if (eval(expression, venv).b) {
+			if (eval(expression, venv) == vbool(true)) {
 				for (AQuestion q1 <- questions) {
 					venvQuestion+=eval(q1, inp, venv);
 				}
+				return venv;
 			} else {
 				for (AQuestion q2 <- questions2) {
 					venvQuestion+=eval(q2, inp, venv);
 				}
+				return venv;
 			}
+		default: return venv;
 	}
-return venvQuestion; 
+	return venv; 
 }
 
 Value eval(AExpr e, VEnv venv) {

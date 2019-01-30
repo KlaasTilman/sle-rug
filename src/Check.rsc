@@ -96,7 +96,7 @@ set[Message] check(AExpr e, TEnv tenv, UseDef useDef) {
 			msgs += { error("Undeclared variable", u) | useDef[u] == {} };
 		case notExpr(AExpr expression, src = loc u):
 			msgs += { error("Operator `!` expects boolean type", u) | typeOf(expression, tenv, useDef)==tbool() };
-		case multiplicate(AExpr expression1, AExpr expression2, src = loc u):
+		case multiplicate(AExpr expression1, AExpr expression2, src = loc u): 
 			msgs += { error("Operator `*` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
 		case divide(AExpr expression1, AExpr expression2, src = loc u):
 			msgs += { error("Operator `/` expects two integer types", u) | !(typeOf(expression1, tenv, useDef)==tint() && typeOf(expression2, tenv, useDef)==tint())};
